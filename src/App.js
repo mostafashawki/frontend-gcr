@@ -19,7 +19,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>React App</h1>
+      <h1>React App - CI/CD WORKS!</h1>
       {data ? (
         <p>Data from the server: {data.message}</p>
       ) : (
