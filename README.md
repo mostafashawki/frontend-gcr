@@ -1,70 +1,82 @@
-# Getting Started with Create React App
+# Web Application Deployment on Google Cloud Run
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview
 
-## Available Scripts
+This document provides step-by-step instructions on deploying your web application on Google Cloud Run using Continuous Integration and Continuous Deployment (CI/CD) with GitHub and Google Cloud Build.
 
-In the project directory, you can run:
+### Prerequisites
 
-### `npm start`
+Make sure you have the following prerequisites before proceeding:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- A GitHub repository containing your web application code.
+- A Dockerfile for building your application as a container.
+- A cloudbuild.yaml file for setting up CI/CD in the root of your project.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Deployment Steps
 
-### `npm test`
+### 1. Push to GitHub
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Ensure that your project is pushed to GitHub, and your repository includes the Dockerfile and cloudbuild.yaml files.
 
-### `npm run build`
+### 2. Create Cloud Build Trigger
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Go to [Google Cloud Console - Cloud Build](https://console.cloud.google.com/cloud-build).
+2. Click on "Triggers" in the left navigation.
+3. Click "Connect Repository" and link your GitHub repository.
+4. Create a new trigger with the desired settings (e.g., branch or tag filter).
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 3. Enable Cloud Run Admin
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. Visit [Google Cloud Console - Cloud Build Settings](https://console.cloud.google.com/cloud-build/settings/).
+2. Search for "Cloud Run" and enable "Cloud Run Admin."
 
-### `npm run eject`
+### 4. Create a Cloud Run Service
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. Open [Google Cloud Console](https://console.cloud.google.com/).
+2. In the navigation menu, select "Cloud Run."
+3. Click "Create Service" to create a new service.
+4. Configure the service with the required settings, including the container image URL.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 5. Update cloudbuild.yaml
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Update your cloudbuild.yaml file to include the CI/CD pipeline. Replace placeholders with your specific information:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```yaml
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/[SERVICE-NAME]:$COMMIT_SHA', '.']
 
-## Learn More
+# Push the container image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/[SERVICE-NAME]:$COMMIT_SHA']
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+# Deploy container image to Cloud Run
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - 'run'
+  - 'deploy'
+  - '[SERVICE-NAME]'
+  - '--image'
+  - 'gcr.io/$PROJECT_ID/[SERVICE-NAME]:$COMMIT_SHA'
+  - '--region'
+  - '[REGION]'
+images:
+- 'gcr.io/$PROJECT_ID/[SERVICE-NAME]:$COMMIT_SHA'
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Replace:
+- `[SERVICE-NAME]` with the name of the Cloud Run service.
+- `[REGION]` with the region of the Cloud Run service you are deploying.
 
-### Code Splitting
+### 6. Commit and Push Changes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Commit the changes to your cloudbuild.yaml file and push them to your GitHub repository. This action triggers the Cloud Build pipeline.
 
-### Analyzing the Bundle Size
+### 7. Monitor CI/CD Pipeline
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Go back to the [Google Cloud Console - Cloud Build](https://console.cloud.google.com/cloud-build) to monitor the progress of your CI/CD pipeline.
 
-### Making a Progressive Web App
+Upon successful completion, your web application will be deployed to Google Cloud Run automatically.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Congratulations! You have successfully set up CI/CD for your web application on Google Cloud Run.
